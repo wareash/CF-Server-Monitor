@@ -708,7 +708,7 @@
       <div v-if="d1UsageResult" id="d1UsageModal" class="modal-overlay active">
         <div class="modal-dialog">
           <div class="modal-header">
-            <div class="modal-title">$ d1 quota --utc</div>
+            <div class="modal-title">$ D1 & Workers quota --utc</div>
             <button class="modal-close" @click="d1UsageResult = null">✕</button>
           </div>
 
@@ -747,7 +747,7 @@
 
             <p class="text-secondary text-sm line-height-1-6 mt-4">
               {{ trans.d1UsageDate }}：{{ d1UsageResult.usage.date }} ({{ d1UsageResult.usage.timezone }})<br>
-              {{ trans.d1NextReset }}：{{ formatDateTime(d1UsageResult.usage.nextResetAt) }}
+              {{ trans.d1NextReset }}：{{ formatUtcDateTime(d1UsageResult.usage.nextResetAt) }} ({{ d1UsageResult.usage.timezone }})
             </p>
           </div>
 
@@ -787,7 +787,7 @@ const getMessage = (msg) => {
 }
 
 const formatNumber = (value) => Number(value || 0).toLocaleString()
-const formatDateTime = (value) => value ? new Date(value).toLocaleString() : '-'
+const formatUtcDateTime = (value) => value ? new Date(value).toISOString().replace('T', ' ').slice(0, 19) : '-'
 const getUsagePercent = (used, limit) => {
   if (!limit) return 0
   return Math.min(100, Number(((Number(used || 0) / Number(limit)) * 100).toFixed(2)))
