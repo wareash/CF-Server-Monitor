@@ -275,7 +275,7 @@
             </div>
 
             <div class="settings-section">
-              <div class="section-title"><span>▸</span> {{ trans.turnstileSettings }}</div>
+              <div class="section-title"><span>▸</span> {{ trans.securitySettings }}</div>
 
               <div class="checkbox-item">
                 <input type="checkbox" id="cfg_turnstile_enabled" v-model="settings.turnstile_enabled">
@@ -301,6 +301,49 @@
                 <span class="warning-icon">[i]</span> 
                 {{ trans.turnstileTip }}
               </p>
+
+              <div class="form-group mt-4">
+                <label class="form-label">{{ trans.jwtSecret }}</label>
+                <div class="password-input-wrapper">
+                  <input :type="passwordVisible.jwtSecret ? 'text' : 'password'" name="jwt_secret" autocomplete="off" v-model="settings.jwt_secret" class="form-input" :placeholder="trans.jwtSecretPlaceholder">
+                  <button type="button" class="password-toggle" @click="togglePassword('jwtSecret')">
+                    {{ passwordVisible.jwtSecret ? '🙈' : '👁️' }}
+                  </button>
+                </div>
+              </div>
+
+              <p class="text-muted text-sm mt-2">
+                <span class="warning-icon">[i]</span> 
+                {{ trans.jwtSecretTip }}
+              </p>
+            </div>
+
+            <div class="settings-section">
+              <div class="section-title"><span>▸</span> {{ trans.cloudflareSettings }}</div>
+
+              <div class="form-group">
+                <label class="form-label">{{ trans.cloudflareAccountId }}</label>
+                <input type="text" name="cloudflare_account_id" autocomplete="off" v-model="settings.cloudflare_account_id" class="form-input" :placeholder="trans.cloudflareAccountIdPlaceholder">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Cloudflare API Token</label>
+                <div class="password-input-wrapper">
+                  <input :type="passwordVisible.cloudflareToken ? 'text' : 'password'" name="cloudflare_token" autocomplete="off" v-model="settings.cloudflare_token" class="form-input" :placeholder="trans.cloudflareTokenPlaceholder">
+                  <button type="button" class="password-toggle" @click="togglePassword('cloudflareToken')">
+                    {{ passwordVisible.cloudflareToken ? '🙈' : '👁️' }}
+                  </button>
+                </div>
+              </div>
+
+              <p class="text-muted text-sm mt-2">
+                <span class="warning-icon">[i]</span> 
+                {{ trans.cloudflareTokenTip }}
+              </p>
+
+              <div class="form-group mt-4">
+                <button @click="queryD1Usage" class="btn btn-primary btn-lg" :disabled="d1UsageLoading">{{ d1UsageLoading ? '⏳' : '🔍' }} {{ trans.queryD1Quota }}</button>
+              </div>
             </div>
 
             <div class="settings-section">
@@ -334,25 +377,6 @@
               <p class="text-muted text-sm mt-2">
                 <span class="warning-icon">[i]</span>
                 {{ trans.apiSecretTip }}
-              </p>
-            </div>
-
-            <div class="settings-section">
-              <div class="section-title"><span>▸</span> {{ trans.jwtSettings }}</div>
-
-              <div class="form-group">
-                <label class="form-label">{{ trans.jwtSecret }}</label>
-                <div class="password-input-wrapper">
-                  <input :type="passwordVisible.jwtSecret ? 'text' : 'password'" name="jwt_secret" autocomplete="off" v-model="settings.jwt_secret" class="form-input" :placeholder="trans.jwtSecretPlaceholder">
-                  <button type="button" class="password-toggle" @click="togglePassword('jwtSecret')">
-                    {{ passwordVisible.jwtSecret ? '🙈' : '👁️' }}
-                  </button>
-                </div>
-              </div>
-
-              <p class="text-muted text-sm mt-2">
-                <span class="warning-icon">[i]</span> 
-                {{ trans.jwtSecretTip }}
               </p>
             </div>
 
@@ -681,6 +705,62 @@
         </div>
       </div>
 
+      <div v-if="d1UsageResult" id="d1UsageModal" class="modal-overlay active">
+        <div class="modal-dialog">
+          <div class="modal-header">
+            <div class="modal-title">$ d1 quota --utc</div>
+            <button class="modal-close" @click="d1UsageResult = null">✕</button>
+          </div>
+
+          <div v-if="d1UsageResult.success" class="mb-4">
+            <div class="quota-progress-list">
+              <div class="quota-progress-item">
+                <div class="flex-justify-between text-sm mb-1">
+                  <span>{{ trans.d1RowsRead }}：{{ formatNumber(d1UsageResult.usage.rowsRead) }} / {{ formatNumber(d1UsageResult.usage.readLimit) }}</span>
+                  <span>{{ getUsagePercent(d1UsageResult.usage.rowsRead, d1UsageResult.usage.readLimit) }}%</span>
+                </div>
+                <div class="quota-progress-bar">
+                  <div class="quota-progress-fill" :style="{ width: getUsagePercent(d1UsageResult.usage.rowsRead, d1UsageResult.usage.readLimit) + '%' }"></div>
+                </div>
+              </div>
+
+              <div class="quota-progress-item">
+                <div class="flex-justify-between text-sm mb-1">
+                  <span>{{ trans.d1RowsWritten }}：{{ formatNumber(d1UsageResult.usage.rowsWritten) }} / {{ formatNumber(d1UsageResult.usage.writeLimit) }}</span>
+                  <span>{{ getUsagePercent(d1UsageResult.usage.rowsWritten, d1UsageResult.usage.writeLimit) }}%</span>
+                </div>
+                <div class="quota-progress-bar">
+                  <div class="quota-progress-fill" :style="{ width: getUsagePercent(d1UsageResult.usage.rowsWritten, d1UsageResult.usage.writeLimit) + '%' }"></div>
+                </div>
+              </div>
+
+              <div class="quota-progress-item">
+                <div class="flex-justify-between text-sm mb-1">
+                  <span>{{ trans.workersRequests }}：{{ formatNumber(d1UsageResult.usage.workersRequests) }} / {{ formatNumber(d1UsageResult.usage.workersRequestLimit) }}</span>
+                  <span>{{ getUsagePercent(d1UsageResult.usage.workersRequests, d1UsageResult.usage.workersRequestLimit) }}%</span>
+                </div>
+                <div class="quota-progress-bar">
+                  <div class="quota-progress-fill" :style="{ width: getUsagePercent(d1UsageResult.usage.workersRequests, d1UsageResult.usage.workersRequestLimit) + '%' }"></div>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-secondary text-sm line-height-1-6 mt-4">
+              {{ trans.d1UsageDate }}：{{ d1UsageResult.usage.date }} ({{ d1UsageResult.usage.timezone }})<br>
+              {{ trans.d1NextReset }}：{{ formatDateTime(d1UsageResult.usage.nextResetAt) }}
+            </p>
+          </div>
+
+          <div v-else class="danger-box mb-4">
+            {{ d1UsageResult.error }}
+          </div>
+
+          <div class="modal-footer flex-justify-end">
+            <button @click="d1UsageResult = null" class="btn">{{ trans.close }}</button>
+          </div>
+        </div>
+      </div>
+
       <Footer />
     </div>
   </div>
@@ -704,6 +784,13 @@ const getMessage = (msg) => {
     return msg[currentLang.value] || msg.en || Object.values(msg)[0] || ''
   }
   return ''
+}
+
+const formatNumber = (value) => Number(value || 0).toLocaleString()
+const formatDateTime = (value) => value ? new Date(value).toLocaleString() : '-'
+const getUsagePercent = (used, limit) => {
+  if (!limit) return 0
+  return Math.min(100, Number(((Number(used || 0) / Number(limit)) * 100).toFixed(2)))
 }
 
 const isLoggedIn = ref(false)
@@ -738,6 +825,8 @@ const settings = ref({
   turnstile_enabled: false,
   turnstile_site_key: '',
   turnstile_secret_key: '',
+  cloudflare_account_id: '',
+  cloudflare_token: '',
   jwt_secret: '',
   username: '',
   password: '',
@@ -754,6 +843,7 @@ const passwordVisible = ref({
   tgBotToken: false,
   tgChatId: false,
   turnstileSecret: false,
+  cloudflareToken: false,
   jwtSecret: false,
   username: false,
   password: false,
@@ -792,6 +882,8 @@ const showDbModal = ref(false)
 const dbOperation = ref('')
 const dbLoading = ref(false)
 const dbResult = ref(null)
+const d1UsageLoading = ref(false)
+const d1UsageResult = ref(null)
 
 const showCopyModal = ref(false)
 const copyServerId = ref('')
@@ -939,6 +1031,8 @@ const loadSettings = async () => {
         turnstile_enabled: settingsData.turnstile_enabled === 'true',
         turnstile_site_key: settingsData.turnstile_site_key || '',
         turnstile_secret_key: settingsData.turnstile_secret_key || '',
+        cloudflare_account_id: settingsData.cloudflare_account_id || '',
+        cloudflare_token: settingsData.cloudflare_token || '',
         jwt_secret: settingsData.jwt_secret || '',
         username: settingsData.username || '',
         password: '',  // 不显示加密后的密码
@@ -1002,6 +1096,8 @@ const saveSettings = async () => {
         turnstile_enabled: settings.value.turnstile_enabled ? 'true' : 'false',
         turnstile_site_key: settings.value.turnstile_site_key,
         turnstile_secret_key: settings.value.turnstile_secret_key,
+        cloudflare_account_id: settings.value.cloudflare_account_id,
+        cloudflare_token: settings.value.cloudflare_token,
         jwt_secret: settings.value.jwt_secret,
         username: settings.value.username,
         custom_ct: settings.value.custom_ct,
@@ -1367,6 +1463,26 @@ const openDbModal = (operation) => {
 const closeDbModal = () => {
   if (!dbLoading.value) {
     showDbModal.value = false
+  }
+}
+
+const queryD1Usage = async () => {
+  if (d1UsageLoading.value) return
+  d1UsageLoading.value = true
+  d1UsageResult.value = null
+
+  try {
+    const res = await adminApi({ action: 'd1_usage' })
+    const result = await res.json()
+    if (res.ok) {
+      d1UsageResult.value = result
+    } else {
+      d1UsageResult.value = { success: false, error: result.error || 'Fail' }
+    }
+  } catch (e) {
+    d1UsageResult.value = { success: false, error: e.message }
+  } finally {
+    d1UsageLoading.value = false
   }
 }
 

@@ -46,6 +46,113 @@ function isValidName(name) {
   return name && typeof name === 'string' && name.trim().length > 0 && name.length <= 100;
 }
 
+const D1_DAILY_READ_LIMIT = 5000000;
+const D1_DAILY_WRITE_LIMIT = 100000;
+const WORKERS_DAILY_REQUEST_LIMIT = 100000;
+
+function getUtcTodayRange() {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const end = new Date(start.getTime() + 86400000 - 1);
+  return {
+    date: start.toISOString().slice(0, 10),
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10),
+    startTime: start.toISOString(),
+    endTime: end.toISOString(),
+    nextResetAt: new Date(start.getTime() + 86400000).toISOString()
+  };
+}
+
+async function cloudflareGraphql(query, variables, token) {
+  const response = await fetch('https://api.cloudflare.com/client/v4/graphql', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ query, variables })
+  });
+  const data = await response.json();
+  if (!response.ok || data.errors) {
+    const message = data.errors && data.errors.length > 0 ? data.errors.map(e => e.message).join('; ') : 'Cloudflare GraphQL request failed';
+    throw new Error(message);
+  }
+  return data.data;
+}
+
+async function getD1DailyUsage(token, accountId) {
+  if (!token) {
+    throw new Error('请先配置 Cloudflare Token');
+  }
+  if (!accountId) {
+    throw new Error('请先配置 Cloudflare 用户 ID / Account ID');
+  }
+
+  const range = getUtcTodayRange();
+  const query = `query CloudflareDailyUsage($accountTag: string!, $start: Date, $end: Date, $startTime: string, $endTime: string) {
+    viewer {
+      accounts(filter: { accountTag: $accountTag }) {
+        d1AnalyticsAdaptiveGroups(
+          limit: 10000
+          filter: { date_geq: $start, date_leq: $end }
+        ) {
+          sum {
+            rowsRead
+            rowsWritten
+          }
+          dimensions {
+            databaseId
+          }
+        }
+        workersInvocationsAdaptive(
+          limit: 10000
+          filter: { datetime_geq: $startTime, datetime_leq: $endTime }
+        ) {
+          sum {
+            requests
+          }
+        }
+      }
+    }
+  }`;
+
+  const data = await cloudflareGraphql(query, {
+    accountTag: accountId,
+    start: range.start,
+    end: range.end,
+    startTime: range.startTime,
+    endTime: range.endTime
+  }, token);
+  const account = data.viewer?.accounts?.[0] || {};
+  const groups = account.d1AnalyticsAdaptiveGroups || [];
+  const usage = groups.reduce((total, group) => {
+    total.rowsRead += Number(group.sum?.rowsRead || 0);
+    total.rowsWritten += Number(group.sum?.rowsWritten || 0);
+    return total;
+  }, { rowsRead: 0, rowsWritten: 0 });
+  const workersRequests = (account.workersInvocationsAdaptive || []).reduce((total, group) => {
+    return total + Number(group.sum?.requests || 0);
+  }, 0);
+
+  return {
+    date: range.date,
+    timezone: 'UTC+0',
+    nextResetAt: range.nextResetAt,
+    rowsRead: usage.rowsRead,
+    rowsWritten: usage.rowsWritten,
+    readLimit: D1_DAILY_READ_LIMIT,
+    writeLimit: D1_DAILY_WRITE_LIMIT,
+    readRemaining: Math.max(D1_DAILY_READ_LIMIT - usage.rowsRead, 0),
+    writeRemaining: Math.max(D1_DAILY_WRITE_LIMIT - usage.rowsWritten, 0),
+    workersRequests,
+    workersRequestLimit: WORKERS_DAILY_REQUEST_LIMIT,
+    workersRequestRemaining: Math.max(WORKERS_DAILY_REQUEST_LIMIT - workersRequests, 0),
+    databaseCount: groups.length,
+    accountId
+  };
+}
+
 export async function handleAdminAPI(request, env, sys) {
   try {
     const data = await request.json();
@@ -195,11 +302,27 @@ export async function handleAdminAPI(request, env, sys) {
         headers: { 'Content-Type': 'application/json' }
       });
     }
+    else if (data.action === 'd1_usage') {
+      try {
+        const usage = await getD1DailyUsage(sys.cloudflare_token || '', sys.cloudflare_account_id || '');
+        return new Response(JSON.stringify({
+          success: true,
+          usage
+        }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
     else if (data.action === 'save_settings') {
       const settings = data.settings || {};
 
       const APPEARANCE_FIELDS = ['site_title', 'custom_bg', 'custom_head', 'custom_script'];
-      const SITE_FIELDS = ['is_public', 'show_price', 'show_expire', 'show_bw', 'show_tf', 'show_long_history', 'tg_notify', 'tg_bot_token', 'tg_chat_id', 'turnstile_enabled', 'turnstile_site_key', 'turnstile_secret_key', 'jwt_secret', 'username', 'password', 'custom_ct', 'custom_cu', 'custom_cm', 'custom_bd', 'cleanup_skip_count'];
+      const SITE_FIELDS = ['is_public', 'show_price', 'show_expire', 'show_bw', 'show_tf', 'show_long_history', 'tg_notify', 'tg_bot_token', 'tg_chat_id', 'turnstile_enabled', 'turnstile_site_key', 'turnstile_secret_key', 'jwt_secret', 'username', 'password', 'cloudflare_account_id', 'cloudflare_token', 'custom_ct', 'custom_cu', 'custom_cm', 'custom_bd', 'cleanup_skip_count'];
 
       const appearanceOptions = {};
       for (const field of APPEARANCE_FIELDS) {

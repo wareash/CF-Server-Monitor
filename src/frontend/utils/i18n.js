@@ -197,6 +197,7 @@ const translations = reactive({
     apiSecretTip: 'The API_SECRET for server reporting still uses the environment variable, regardless of password settings here.',
     passwordMismatch: 'Passwords do not match',
     usernameRequired: 'Username is required',
+    securitySettings: 'Security Settings',
     turnstileSettings: 'Cloudflare Turnstile',
     enableTurnstile: 'Enable Turnstile',
     turnstileSiteKey: 'Site Key',
@@ -216,7 +217,18 @@ const translations = reactive({
     trafficCalcType: 'Traffic Calculation Type',
     trafficCalcTotal: 'Upload + Download',
     trafficCalcUl: 'Upload Only',
-    trafficCalcDl: 'Download Only'
+    trafficCalcDl: 'Download Only',
+    cloudflareSettings: 'Cloudflare Settings',
+    cloudflareAccountId: 'Cloudflare Account ID',
+    cloudflareAccountIdPlaceholder: 'e.g. f81d307be4628170a3878394435c9c8b',
+    cloudflareTokenPlaceholder: 'Cloudflare API Token',
+    cloudflareTokenTip: 'Requires Account Analytics Read permission to query daily usage.',
+    queryD1Quota: 'Query D1 Quota',
+    d1UsageDate: 'Usage Date',
+    d1RowsRead: 'Rows Read',
+    d1RowsWritten: 'Rows Written',
+    d1NextReset: 'Next Reset',
+    workersRequests: 'Workers Requests'
   },
   zh: {
     theme: '主题',
@@ -414,6 +426,7 @@ const translations = reactive({
     apiSecretTip: '服务器上报使用的 API_SECRET 仍使用环境变量，不受此处密码设置影响。',
     passwordMismatch: '两次输入的密码不一致',
     usernameRequired: '用户名不能为空',
+    securitySettings: '安全设置',
     turnstileSettings: 'Cloudflare Turnstile',
     enableTurnstile: '启用 Turnstile',
     turnstileSiteKey: '站点密钥',
@@ -433,7 +446,18 @@ const translations = reactive({
     trafficCalcType: '月流量计算类型',
     trafficCalcTotal: '上行+下行',
     trafficCalcUl: '仅上行',
-    trafficCalcDl: '仅下行'
+    trafficCalcDl: '仅下行',
+    cloudflareSettings: 'Cloudflare 设置',
+    cloudflareAccountId: 'Cloudflare Account ID',
+    cloudflareAccountIdPlaceholder: '例如 f81d307be4628170a3878394435c9c8b',
+    cloudflareTokenPlaceholder: 'Cloudflare API Token',
+    cloudflareTokenTip: '查询每日用量需要 Account Analytics Read 权限。',
+    queryD1Quota: '查询 D1 额度',
+    d1UsageDate: '统计日期',
+    d1RowsRead: '已读取行数',
+    d1RowsWritten: '已写入行数',
+    d1NextReset: '下次重置',
+    workersRequests: 'Workers 请求数'
   }
 })
 

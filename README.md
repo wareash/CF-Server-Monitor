@@ -8,7 +8,7 @@
 
 **当前版本：V2.7.1**
 
-- v2.7.1 新增国内四线路丢包率监控与历史图表，新增GPU字段与图表展示（GPU暂未测试）；
+- v2.7.1 新增国内四线路丢包率监控与历史图表，新增GPU字段与图表展示（GPU暂未测试），后台新增 Cloudflare D1/Workers 每日额度查询功能；
 >    升级后请在后台点击 **升级数据库** 并重新安装/升级探针，否则新图表可能提示数据库结构未升级
 >
 >    Linux -> `https://你的项目.你的子域.workers.dev/install.sh | bash -s install`
@@ -45,6 +45,7 @@
 - 🧪 **本地测试**：支持本地模拟数据生成，方便开发和测试
 - 🔐 **Turnstile 验证**：集成 Cloudflare Turnstile 人机验证，增强 API 安全性
 - 🔑 **JWT 认证**：登录系统采用 JWT token 认证，支持自定义密钥
+- 📉 **额度查询**：后台可查询 Cloudflare D1 当日读写行数与 Workers 请求量
 - ⚡ **实时推送**：基于 Durable Objects + WebSocket，探针上报后页面立即刷新，无轮询延迟
 
 ## 🚀 快速开始
@@ -398,8 +399,17 @@ Windows 系统
 如需自定义 JWT 密钥：
 
 1. 生成一个至少 32 位的随机字符串作为 JWT Secret
-2. 在管理后台 → 全局设置中填入 JWT Secret
+2. 在管理后台 → 全局设置 → 安全设置中填入 JWT Secret
 3. 保存后系统将使用自定义密钥进行 token 签名
+
+### Cloudflare 额度查询（可选）
+
+如需在后台查询 D1 当日读写额度和 Workers 请求量：
+
+1. 在 [Cloudflare Dashboard](https://dash.cloudflare.com/?to=/:account/workers-and-pages)右下角复制当前账户的 **Account ID**
+2. 在[API Tokens 页面](https://dash.cloudflare.com/profile/api-tokens)创建具备 **Account Analytics Read** 权限的 Cloudflare API Token
+3. 在管理后台 → 全局设置 → Cloudflare 设置中填入 Account ID 和 API Token
+4. 保存后点击 **查询 D1 额度** 查看 UTC 当日用量与下次重置时间
 
 </details>
 
