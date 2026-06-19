@@ -11,11 +11,11 @@
 - v2.7.1 新增国内四线路丢包率监控与历史图表，新增GPU字段与图表展示（GPU暂未测试），后台新增 Cloudflare D1/Workers 每日额度查询功能；
 >    升级后请在后台点击 **升级数据库** 并重新安装/升级探针，否则新图表可能提示数据库结构未升级
 >
->    Linux -> `https://你的项目.你的子域.workers.dev/install.sh | bash -s install`
+>    Linux -> `curl -sL https://你的项目.你的子域.workers.dev/install.sh | bash -s install`
 >
->    Alpine Linux -> `https://你的项目.你的子域.workers.dev/install-alpine.sh | sh -s install`
+>    Alpine Linux -> `curl -sL https://你的项目.你的子域.workers.dev/install-alpine.sh | sh -s install`
 >
->    OpenWrt -> `https://你的项目.你的子域.workers.dev/install-openwrt.sh | sh -s install`
+>    OpenWrt -> `curl -sL https://你的项目.你的子域.workers.dev/install-openwrt.sh | sh -s install`
 
 - v2.7.0 将每日数据清理改为每月1号执行的表轮换任务, 删除旧表将不再扣除D1消耗,前端图表支持查看最长7天的历史数据,优化脚本一键升级功能
 - V2.6.10 修复了方式一部署方式，同步后丢失API\_SECRET的问题
