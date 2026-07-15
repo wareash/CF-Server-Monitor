@@ -430,6 +430,7 @@ irm https://你的项目.你的子域.workers.dev/cf-server-monitor.ps1 -OutFile
 1. 获取 Bark 推送链接，比如 `https://api.day.app/xxxxxxx/自定义内容`，删掉中文，保留 `https://api.day.app/xxxxxxx/`
 2. 将链接填入 **Bot Token** 字段
 3. **Chat ID** 留空
+4. 如果是自建 Bark 服务，格式为 `bark:https://example.com/xxxxxxx/`
 
 ### Server 酱
 
